@@ -30,6 +30,11 @@ export function proxyConfigToMiddlewareConfig(proxy: ConfigFileProxy): ProxyMidd
     config.agent = false as any; // TODO: type issue
   }
 
+  // enable http-proxy-middleware trace at debug level.
+  // To debug the underlying express server, set the following env var: DEBUG=express:*
+  if (proxy.debug) {
+    config.logLevel = "debug";
+  }
   if (proxy.rejectUnauthorized === false) {
     config.secure = false;
   }

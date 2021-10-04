@@ -4,6 +4,7 @@ export interface ConfigFileProxy {
   path: string;
   proxyUrl: string;
   proxyNoAgent?: boolean;
+  debug: boolean;
 
   /**
    * @deprecated
