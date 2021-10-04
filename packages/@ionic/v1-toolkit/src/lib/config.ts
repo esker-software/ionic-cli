@@ -6,6 +6,7 @@ export interface ConfigFileProxy {
   proxyNoAgent?: boolean;
   debug: boolean;
   cookieDomainRewrite: { [domain: string]: string };
+  locationRewrite: boolean;
 
   /**
    * @deprecated

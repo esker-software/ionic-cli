@@ -1,5 +1,6 @@
 import { pathExists, readFile } from '@ionic/utils-fs';
 import * as chalk from 'chalk';
+import { IncomingMessage, ServerResponse } from 'http';
 import * as path from 'path';
 
 import { ConfigFileProxy } from './config';
@@ -39,6 +40,31 @@ export function proxyConfigToMiddlewareConfig(proxy: ConfigFileProxy): ProxyMidd
   // rewrite cookie domain on redirect
   if (proxy.cookieDomainRewrite) {
     config.cookieDomainRewrite = proxy.cookieDomainRewrite;
+  }
+
+  /**
+   * Rewrite location header host/port AND path on server response
+   * autoRewrite option is not useful since it only rewrites host and port.
+   * 
+   * Example:
+   * - Ionic serve is running on http://localhost:8100.
+   * - Configuration tells us to redirect /api to http://testapihost/
+   * - If a call to /api/foo redirects to http://testapihost/bar location, the next http request won't work.
+   * => We need to rewrite the location so it is http://localhost:8100/api/bar
+   */
+  if (proxy.locationRewrite) {
+    config.onProxyRes = (proxyRes: IncomingMessage, req: IncomingMessage, res: ServerResponse) => {
+      const location = proxyRes.headers.location;
+      if (location) {
+        const externalUrl = 'http://' + req.headers.host;
+        const rewrittenLocation = location.replace(proxy.proxyUrl, `${externalUrl}${proxy.path}/`)
+        if (proxy.debug)
+        {
+          process.stdout.write(`${timestamp()} ${chalk.bold("location rewrite")} ${location} ${chalk.bold("=>")} ${rewrittenLocation}\n`);
+        }
+        proxyRes.headers.location = rewrittenLocation;
+      }
+    };
   }
 
   if (proxy.rejectUnauthorized === false) {
