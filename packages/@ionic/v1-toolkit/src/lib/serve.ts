@@ -35,6 +35,12 @@ export function proxyConfigToMiddlewareConfig(proxy: ConfigFileProxy): ProxyMidd
   if (proxy.debug) {
     config.logLevel = "debug";
   }
+
+  // rewrite cookie domain on redirect
+  if (proxy.cookieDomainRewrite) {
+    config.cookieDomainRewrite = proxy.cookieDomainRewrite;
+  }
+
   if (proxy.rejectUnauthorized === false) {
     config.secure = false;
   }
