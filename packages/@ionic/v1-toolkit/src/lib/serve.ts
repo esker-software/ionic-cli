@@ -52,17 +52,35 @@ export function proxyConfigToMiddlewareConfig(proxy: ConfigFileProxy): ProxyMidd
    * - If a call to /api/foo redirects to http://testapihost/bar location, the next http request won't work.
    * => We need to rewrite the location so it is http://localhost:8100/api/bar
    */
-  if (proxy.locationRewrite) {
+  if (proxy.locationRewrite || proxy.cookieSecureRewrite) {
     config.onProxyRes = (proxyRes: IncomingMessage, req: IncomingMessage, res: ServerResponse) => {
-      const location = proxyRes.headers.location;
-      if (location) {
-        const externalUrl = 'http://' + req.headers.host;
-        const rewrittenLocation = location.replace(proxy.proxyUrl, `${externalUrl}${proxy.path}/`)
-        if (proxy.debug)
-        {
-          process.stdout.write(`${timestamp()} ${chalk.bold("location rewrite")} ${location} ${chalk.bold("=>")} ${rewrittenLocation}\n`);
+
+      if (proxy.cookieSecureRewrite)
+      {
+        if (proxyRes.headers['set-cookie']) {
+          if (proxy.debug)
+          {
+            process.stdout.write(`${timestamp()} ${chalk.bold("cookie secure rewrite")}\n`);
+          }
+          for (const i in proxyRes.headers['set-cookie'])
+          {
+            proxyRes.headers['set-cookie'][i] = proxyRes.headers['set-cookie'][i].replace(/; secure/i, '');
+          }
         }
-        proxyRes.headers.location = rewrittenLocation;
+      }
+
+      if (proxy.locationRewrite)
+      {
+        const location = proxyRes.headers.location;
+        if (location) {
+          const externalUrl = 'http://' + req.headers.host;
+          const rewrittenLocation = location.replace(proxy.proxyUrl, `${externalUrl}${proxy.path}/`)
+          if (proxy.debug)
+          {
+            process.stdout.write(`${timestamp()} ${chalk.bold("location rewrite")} ${location} ${chalk.bold("=>")} ${rewrittenLocation}\n`);
+          }
+          proxyRes.headers.location = rewrittenLocation;
+        }
       }
     };
   }
